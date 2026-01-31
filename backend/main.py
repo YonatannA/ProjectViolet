@@ -1,67 +1,72 @@
-import google.generativeai as genai
+import os
+import json
+from google import genai 
+from google.genai import types  # 🛠️ New import for strict types
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-import json
-import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables
+current_dir = Path(__file__).parent
+env_file_path = current_dir / ".env"
+load_dotenv(dotenv_path=env_file_path, override=True)
 
 app = FastAPI()
 
-# Enable CORS for React
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Initialize the new Gemini 2.0 Client
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
-
-@app.get("/")
-async def root():
-    return {"message": "Sentinel Brain is ONLINE"}
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 @app.post("/analyze")
 async def analyze(transcript: str = Form(...), image: UploadFile = File(...)):
-    # 1. Convert the uploaded image into bytes for Gemini
     image_bytes = await image.read()
     
-    # 2. The Multi-Modal Prompt
-    # Ask for a JSON response so the Frontend can easily update the meters
-    prompt = f"""
-    You are a forensic deepfake analyst. Analyze this video frame and the context.
-    TRANSCRIPT CONTEXT: "{transcript}"
+    prompt_text = f"""
+    You are a forensic deepfake analyst. Analyze this video frame.
+    TRANSCRIPT: "{transcript}"
     
-    Evaluate three specific pillars:
-    1. VISUAL: Look for jawline flickering, lighting mismatches, or screen-door effects.
-    2. LOGIC: Is the transcript using high-pressure scam tactics?
-    3. CONSISTENCY: Does the face look like a natural human interaction?
-
-    RETURN ONLY A VALID JSON OBJECT:
+    RETURN ONLY VALID JSON:
     {{
       "trust_score": (int 0-100),
       "visual_score": (int 0-100),
       "logic_score": (int 0-100),
       "is_fake": (boolean),
-      "reason": "Short one-sentence explanation"
+      "reason": "explanation"
     }}
     """
     
     try:
-        # 3. Call Gemini 1.5 Flash (Multi-modal)
-        response = model.generate_content([
-            prompt, 
-            {"mime_type": "image/jpeg", "data": image_bytes}
-        ])
+        # 🛠️ THE FIX: Use types.Part to create a structured list that Pydantic accepts
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-lite',
+            contents=[
+                # Text Part
+                types.Part.from_text(text=prompt_text),
+                # Image Part
+                types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg')
+            ]
+        )
         
-        # 4. Parse the AI's JSON response
-        # Gemini sometimes wraps JSON in ```json blocks
-        clean_json = response.text.replace('```json', '').replace('```', '').strip()
-        result = json.loads(clean_json)
-        
-        return result
+        # Robustly parse the text response
+        text_content = response.text.strip()
+        if text_content.startswith("```json"):
+            text_content = text_content[7:-3].strip()
+        elif text_content.startswith("```"):
+            text_content = text_content[3:-3].strip()
+            
+        return json.loads(text_content)
 
     except Exception as e:
-        print(f"Error: {e}")
-        return {"trust_score": 0, "is_fake": True, "reason": "Analysis Engine Error"}
+        print(f"Server Error: {str(e)}")
+        # If it still fails, this will help you see the exact error in the logs
+        return {"trust_score": 0, "is_fake": True, "reason": f"Analysis Error: {str(e)}"}
