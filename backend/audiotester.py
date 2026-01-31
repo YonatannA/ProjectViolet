@@ -1,3 +1,13 @@
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # loads .env into environment variables
+
+api_key = os.getenv("GOOGLE_API_KEY")
+
+if not api_key:
+    raise RuntimeError("GOOGLE_API_KEY not found in environment")
+
 import sounddevice as sd
 import numpy as np
 import scipy.io.wavfile as wav
@@ -16,7 +26,7 @@ CHANNELS = 1
 CHUNK_DURATION = 2  # seconds (lower = more "real-time")
 OUTPUT_JSON = "live_transcription.json"
 
-genai.configure(api_key=os.environ[""])
+genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-pro")
 
 # Initialize output file
