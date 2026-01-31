@@ -1,0 +1,83 @@
+/* Modern Dark Cyber Theme */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+/* Container */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: #1f1f1f;
+  border-bottom: 1px solid #333;
+}
+
+.header h1 {
+  font-size: 2.8rem;
+  margin-bottom: 10px;
+  color: #00ffc2; 
+}
+
+.header p {
+  font-size: 1.2rem;
+  color: #a0a0a0;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.hero {
+  text-align: center;
+}
+
+.hero-text {
+  font-size: 1.3rem;
+  color: #c0c0c0;
+  margin-bottom: 30px;
+}
+
+.scan-button {
+  padding: 16px 50px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(145deg, #00ffc2, #00a3ff);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(0, 255, 194, 0.4);
+  transition: all 0.3s ease;
+}
+
+.scan-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 255, 194, 0.6);
+  background: linear-gradient(145deg, #00a3ff, #00ffc2);
+}
+
+.footer {
+  background-color: #1f1f1f;
+  color: #888;
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid #333;
+}
