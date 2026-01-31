@@ -6,12 +6,30 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // the hook handles Screen Capture
   useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => { 
-        if (videoRef.current) videoRef.current.srcObject = stream; 
-      });
+    const startCapture = async () => {
+      try {
+        // Uses getDisplayMedia to track the "Caller" window
+        const stream = await navigator.mediaDevices.getDisplayMedia({ 
+          video: { cursor: "always" },
+          audio: false 
+        });
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      } catch (err) {
+        console.error("Error starting screen capture:", err);
+      }
+    };
+    startCapture();
   }, []);
+
+  // Scan is automated, runs in intervals of 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!loading) runScan(); 
+    }, 2000); 
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const runScan = async () => {
     if (!videoRef.current) return;
