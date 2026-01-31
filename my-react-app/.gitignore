@@ -28,7 +28,6 @@ dist/
 .env
 *.log
 
-venv/
 .env/
 
 
