@@ -16,7 +16,7 @@ CHANNELS = 1
 CHUNK_DURATION = 2  # seconds (lower = more "real-time")
 OUTPUT_JSON = "live_transcription.json"
 
-genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+genai.configure(api_key=os.environ[""])
 model = genai.GenerativeModel("gemini-1.5-pro")
 
 # Initialize output file
