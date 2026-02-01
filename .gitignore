@@ -1,21 +1,45 @@
-# Environments
+# ======================
+# Environments / Secrets
+# ======================
 venv/
+.venv/
 env/
 .env
+.env.*
 
+# (Optional best practice: keep an example file tracked)
+!.env.example
+
+# ======================
 # Python internals
+# ======================
+__pycache__/
 **/__pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Editor settings
-.vscode/
-.idea/
-.DS_Store
-
+# ======================
+# Node / React
+# ======================
 node_modules/
+**/node_modules/
 dist/
 build/
+.vite/
+coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log* 
+pnpm-debug.log*
+*.log
+
+# ======================
+# Editor / OS
+# ======================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

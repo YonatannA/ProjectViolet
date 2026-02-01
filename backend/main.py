@@ -1,7 +1,7 @@
 import os
 import json
 from google import genai 
-from google.genai import types  # 🛠️ New import for strict types
+from google.genai import types 
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -31,7 +31,6 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 async def analyze(transcript: str = Form(...), image: UploadFile = File(...)):
     image_bytes = await image.read()
     
-    # 🧠 Gemini now focuses ONLY on pixels. It doesn't know about the 3D scan.
     prompt_text = """
     ROLE: Senior Forensic Media Analyst & Behavorial Scientist
     TASK: Detect synthetic generation via pixel forensics and biological behavioral tells.

@@ -34,7 +34,7 @@ export const useFaceAnalysis = () => {
     if (results.faceLandmarks?.[0]) {
       const pts = results.faceLandmarks[0];
 
-      // 1️⃣ FEATURE: Z-AXIS DELTA (Anti-2D Spoofing)
+      // FEATURE: Z-AXIS DELTA (Anti-2D Spoofing)
       // Tip of nose vs. Average of both ears
       const noseTip = pts[1];
       const leftEar = pts[234];
@@ -42,14 +42,14 @@ export const useFaceAnalysis = () => {
       const zDelta = Math.abs(noseTip.z - (leftEar.z + rightEar.z) / 2);
       const isFlat = zDelta < 0.035; // Screens have near-zero depth
 
-      // 2️⃣ FEATURE: PROFILE CHALLENGE (Yaw Tracking)
+      // 2FEATURE: PROFILE CHALLENGE (Yaw Tracking)
       // Measure rotation: Difference in X-span of nose to each ear
       const leftSpan = Math.abs(noseTip.x - leftEar.x);
       const rightSpan = Math.abs(noseTip.x - rightEar.x);
       const yawRatio = leftSpan / (rightSpan || 0.001);
       const isExtremeProfile = yawRatio < 0.3 || yawRatio > 3.0; // Subject turned 90 deg
 
-      // 3️⃣ FEATURE: BLINK DETECTION (Biological Tells)
+      // FEATURE: BLINK DETECTION (Biological Tells)
       // Eye Aspect Ratio (EAR) for the left eye
       // Points 159 & 145 (upper/lower lid) and 133 & 33 (corners)
       const eyeTop = pts[159];
@@ -57,7 +57,7 @@ export const useFaceAnalysis = () => {
       const eyeDistance = Math.sqrt(Math.pow(eyeTop.x - eyeBottom.x, 2) + Math.pow(eyeTop.y - eyeBottom.y, 2));
       const isBlinking = eyeDistance < 0.015; // Lids are nearly touching
 
-      // 🚨 AGGREGATED LIVENESS LOGIC
+      // AGGREGATED LIVENESS LOGIC
       // If flat, or if profile check "glitches" landmarks, increment failure
       if (isFlat || (isExtremeProfile && isFlat)) {
         failureBuffer.current += 1;
