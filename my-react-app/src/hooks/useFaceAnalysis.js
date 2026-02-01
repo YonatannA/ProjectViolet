@@ -34,33 +34,36 @@ export const useFaceAnalysis = () => {
     if (results.faceLandmarks?.[0]) {
       const pts = results.faceLandmarks[0];
 
-      // FEATURE: Z-AXIS DELTA (Anti-2D Spoofing)
-      // Tip of nose vs. Average of both ears
+      // 1️⃣ DETECT PERIMETER BLURRING (Face/Hair Boundaries)
+      // We check points at the very edge of the face (e.g., forehead 10, jawline 152)
+      // MediaPipe landmark 'visibility' drops when the model cannot find a sharp edge.
+      const perimeterPoints = [10, 152, 234, 454]; 
+      const avgVisibility = perimeterPoints.reduce((sum, id) => sum + (pts[id].visibility || 0), 0) / 4;
+      const isBlurryBoundary = avgVisibility < 0.82; // Blurring causes low-confidence edge detection
+
+      // 2️⃣ DETECT SQUINTING & GLASSY EYES
+      // Measure Eye Aspect Ratio (EAR) for both eyes
+      const leftEAR = Math.abs(pts[159].y - pts[145].y);
+      const rightEAR = Math.abs(pts[386].y - pts[374].y);
+      
+      const isSquinting = (leftEAR < 0.018 || rightEAR < 0.018); // Narrowed eyes
+      
+      // 'Glassy' eyes often present as perfectly static pupils.
+      // We check for 'Zero-Jitter' in the iris center (points 468-473)
+      const irisX = pts[468].x;
+      const isUnnaturallyStatic = Math.abs(irisX - (pts[468].lastX || irisX)) < 0.0001;
+      pts[468].lastX = irisX;
+
+      // 3️⃣ DEPTH & PROFILE (Existing Z-Delta Logic)
       const noseTip = pts[1];
-      const leftEar = pts[234];
-      const rightEar = pts[454];
-      const zDelta = Math.abs(noseTip.z - (leftEar.z + rightEar.z) / 2);
-      const isFlat = zDelta < 0.035; // Screens have near-zero depth
+      const zDelta = Math.abs(noseTip.z - (pts[234].z + pts[454].z) / 2);
+      const isFlat = zDelta < 0.035;
 
-      // 2FEATURE: PROFILE CHALLENGE (Yaw Tracking)
-      // Measure rotation: Difference in X-span of nose to each ear
-      const leftSpan = Math.abs(noseTip.x - leftEar.x);
-      const rightSpan = Math.abs(noseTip.x - rightEar.x);
-      const yawRatio = leftSpan / (rightSpan || 0.001);
-      const isExtremeProfile = yawRatio < 0.3 || yawRatio > 3.0; // Subject turned 90 deg
-
-      // FEATURE: BLINK DETECTION (Biological Tells)
-      // Eye Aspect Ratio (EAR) for the left eye
-      // Points 159 & 145 (upper/lower lid) and 133 & 33 (corners)
-      const eyeTop = pts[159];
-      const eyeBottom = pts[145];
-      const eyeDistance = Math.sqrt(Math.pow(eyeTop.x - eyeBottom.x, 2) + Math.pow(eyeTop.y - eyeBottom.y, 2));
-      const isBlinking = eyeDistance < 0.015; // Lids are nearly touching
-
-      // AGGREGATED LIVENESS LOGIC
-      // If flat, or if profile check "glitches" landmarks, increment failure
-      if (isFlat || (isExtremeProfile && isFlat)) {
-        failureBuffer.current += 1;
+      // 🚨 AGGREGATED LIVENESS SCORE
+      if (isFlat || isBlurryBoundary) {
+        failureBuffer.current += 3; // High weight for physical edge failure
+      } else if (isSquinting || isUnnaturallyStatic) {
+        failureBuffer.current += 1.5; // Weight for biological/behavioral red flags
       } else {
         failureBuffer.current = Math.max(0, failureBuffer.current - 5);
       }
@@ -68,7 +71,12 @@ export const useFaceAnalysis = () => {
       const isFailed = failureBuffer.current > 20;
       setAdhesionFailure(isFailed);
       
-      return isFailed ? "PHYSICAL_LIVENESS_FAIL" : (isBlinking ? "BLINK_DETECTED" : "Normal");
+      // Detailed status mapping for the UI
+      if (isFailed) return isBlurryBoundary ? "PHYSICAL_FAIL_BLUR" : "PHYSICAL_FAIL_Z_DEPTH";
+      if (isSquinting) return "BEHAVIORAL_SQUINT";
+      if (isUnnaturallyStatic) return "BEHAVIORAL_STATIC_EYE";
+      
+      return "Normal";
     }
     return "Normal";
   };
