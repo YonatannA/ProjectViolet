@@ -1,0 +1,25 @@
+{
+  "name": "sentinel-ai-root",
+  "version": "1.0.0",
+  "scripts": {
+    "frontend": "npm run dev --prefix my-react-app",
+    "backend": "uvicorn backend.main:app --reload --port 8000",
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YonatannA/ProjectViolet.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YonatannA/ProjectViolet/issues"
+  },
+  "homepage": "https://github.com/YonatannA/ProjectViolet#readme"
+}
