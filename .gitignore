@@ -1,0 +1,13 @@
+# Environments
+venv/
+env/
+.env
+
+# Python internals
+**/__pycache__/
+*.pyc
+
+# Editor settings
+.vscode/
+.idea/
+.DS_Store
