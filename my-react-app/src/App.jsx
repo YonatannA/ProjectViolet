@@ -1,89 +1,151 @@
-import React, { useEffect, useRef, useState } from 'react';
-import "./App.css"; 
+import React, { useEffect, useRef, useState } from "react";
+import "./App.css";
 
 export default function App() {
   const videoRef = useRef(null);
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const streamRef = useRef(null);
 
-  // Manual trigger for screen capture to avoid browser security blocks
+  const [result, setResult] = useState(null);
+  const [capturing, setCapturing] = useState(false);
+
   const startCapture = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ 
+      const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { cursor: "always" },
-        audio: false 
+        audio: false,
       });
-      if (videoRef.current) videoRef.current.srcObject = stream;
+
+      streamRef.current = stream;
+      setCapturing(true);
+
+      // If user stops sharing, reset
+      stream.getTracks().forEach((track) => {
+        track.onended = () => stopCapture();
+      });
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+
+      // Run one scan shortly after capture begins
+      setTimeout(runScan, 600);
     } catch (err) {
       console.error("Error starting screen capture:", err);
     }
   };
 
-  // Auto-scan every 10 seconds ONLY if video is active
+  const stopCapture = () => {
+    const stream = streamRef.current;
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCapturing(false);
+    setResult(null);
+    if (videoRef.current) videoRef.current.srcObject = null;
+  };
+
   useEffect(() => {
-  const interval = setInterval(() => {
-    if (!loading) runScan(); 
-  }, 20000); 
-  return () => clearInterval(interval);
-}, [loading]);
+    if (!capturing) return;
+
+    const interval = setInterval(() => {
+      runScan();
+    }, 20000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capturing]);
 
   const runScan = async () => {
-    if (!videoRef.current || videoRef.current.readyState !== 4) return;
-    setLoading(true);
-    
-    const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-    
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.8));
+    const stream = streamRef.current || videoRef.current?.srcObject;
+    const track = stream?.getVideoTracks?.()[0];
 
-    if (!blob) {
-      setLoading(false);
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("image", blob, "frame.jpg");
-    formData.append("transcript", "Live identity verification scan.");
+    if (!capturing || !track || track.readyState !== "live") return;
+    if (!videoRef.current || videoRef.current.videoWidth === 0) return;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/analyze", { 
-        method: "POST", 
-        body: formData 
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.drawImage(videoRef.current, 0, 0);
+
+      const blob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.8)
+      );
+      if (!blob) return;
+
+      const formData = new FormData();
+      formData.append("image", blob, "frame.jpg");
+      formData.append("transcript", "Live identity verification scan.");
+
+      const res = await fetch("http://127.0.0.1:8000/analyze", {
+        method: "POST",
+        body: formData,
       });
+
       const data = await res.json();
       setResult(data);
     } catch (error) {
-      console.error("Connection to backend failed:", error);
-    } finally {
-      setLoading(false);
+      console.error("Scan failed:", error);
     }
   };
 
+  const trustScore =
+    typeof result?.trust_score === "number" ? result.trust_score : null;
+
+  const statusClass =
+    trustScore == null
+      ? "neutral"
+      : trustScore >= 70
+      ? "safe"
+      : trustScore < 50
+      ? "danger"
+      : "warning";
+
   return (
-    <div className="app-container" style={{ backgroundColor: 'black', color: '#00ff00', minHeight: '100vh', fontFamily: 'monospace' }}>
-      <header className="header" style={{ borderBottom: '1px solid #004400', padding: '20px', textAlign: 'center' }}>
+    <div className="app-container">
+      <header className="header">
         <h1>🛡️ SENTINEL AI</h1>
+        <p>Real-time call video call scam detection, right on your device.</p>
       </header>
 
-      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px' }}>
-        <button onClick={startCapture} style={{ marginBottom: '20px', padding: '10px', cursor: 'pointer' }}>
-          ACTIVATE CALLER TRACKER
-        </button>
-        
-        <div className="video-viewport" style={{ position: 'relative', marginBottom: '20px' }}>
-          <video ref={videoRef} autoPlay playsInline style={{ width: '100%', maxWidth: '640px', border: '2px solid #00ff00', borderRadius: '8px' }} />
+      <main className="main-content">
+        {!capturing ? (
+          <button className="scan-button" onClick={startCapture}>
+            START CAPTURE
+          </button>
+        ) : (
+          <button className="scan-button" onClick={stopCapture}>
+            STOP CAPTURE
+          </button>
+        )}
+
+        <div className={`video-viewport ${statusClass}`}>
+          <video ref={videoRef} autoPlay playsInline className="video-feed" />
+          <div className="hud-corners" aria-hidden="true" />
         </div>
 
-        {result && (
-          <div className="results-hud" style={{ border: '1px solid #00ff00', padding: '20px', width: '100%', maxWidth: '640px' }}>
-            <h3 style={{ color: result.trust_score < 50 ? 'red' : '#00ff00' }}>
-              TRUST SCORE: {result.trust_score}%
-            </h3>
-            <p>{result.reason}</p>
+        <div className="results-hud">
+          <div className="hud-row">
+            <span className="hud-label">STATUS</span>
+            <span className={`hud-pill ${statusClass}`}>
+              {statusClass.toUpperCase()}
+            </span>
           </div>
-        )}
+
+          <div className="hud-row">
+            <span className="hud-label">TRUST SCORE</span>
+            <span className={`hud-score ${statusClass}`}>
+              {trustScore == null ? "--" : `${trustScore}%`}
+            </span>
+          </div>
+
+          <div className="hud-reason">
+            {result?.reason ? result.reason : "Waiting for first scan..."}
+          </div>
+        </div>
       </main>
     </div>
   );
