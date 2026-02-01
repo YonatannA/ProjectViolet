@@ -1,14 +1,18 @@
-
+# ======================
+# Environments / Secrets
+# ======================
 venv/
 .venv/
 env/
 .env
 .env.*
 
-
+# (Optional best practice: keep an example file tracked)
 !.env.example
 
-
+# ======================
+# Python internals
+# ======================
 __pycache__/
 **/__pycache__/
 *.py[cod]
@@ -16,7 +20,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
-
+# ======================
+# Node / React
+# ======================
 node_modules/
 **/node_modules/
 dist/
@@ -28,7 +34,9 @@ yarn-debug.log*
 pnpm-debug.log*
 *.log
 
-
+# ======================
+# Editor / OS
+# ======================
 .vscode/
 .idea/
 .DS_Store
