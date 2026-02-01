@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "frontend": "npm run dev --prefix my-react-app",
-    "backend": "py -m uvicorn backend.main:app --reload --port 8000",
+    "backend": "python3 -m uvicorn backend.main:app --reload --port 8000",
     "dev": "npx concurrently \"npm run frontend\" \"npm run backend\""
   },
   "devDependencies": {
@@ -21,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/YonatannA/ProjectViolet/issues"
   },
-  "homepage": "https://github.com/YonatannA/ProjectViolet#readme"
+  "homepage": "https://github.com/YonatannA/ProjectViolet#readme",
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.32"
+  }
 }

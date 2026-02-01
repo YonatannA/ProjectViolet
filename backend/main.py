@@ -31,42 +31,51 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 async def analyze(transcript: str = Form(...), image: UploadFile = File(...)):
     image_bytes = await image.read()
     
-    prompt_text = f"""
-    You are a forensic deepfake analyst. Analyze this video frame.
-    TRANSCRIPT: "{transcript}"
-    
+    # 🧠 Gemini now focuses ONLY on pixels. It doesn't know about the 3D scan.
+    prompt_text = """
+    ROLE: Senior Forensic Media Analyst & Behavorial Scientist
+    TASK: Detect synthetic generation via pixel forensics and biological behavioral tells.
+
+    CHECKLIST:
+    1. EYE SYMMETRY: Check for mismatched pupils or inconsistent catch-lights.
+    2. PERIMETER BLENDING: Look for "halos" or blurring at hair/ear boundaries.
+    3. SKIN TOPOGRAPHY: Look for over-smoothing, lack of pores, or "waxy" textures.
+    4. TEMPORAL JITTER: Check for "waxy" jawlines disconnected from the neck.
+    5. Ocular Rhythms: Check for fixed "dead-eye" stares or abnormal/missing blinking.
+    6. Emotional Sync: Flag mismatches between expressions and overly exaggerated smiles.
+    7. Adaptors: Look for a lack of unconscious micro-movements (fidgets, scratching, etc.).
+
     RETURN ONLY VALID JSON:
-    {{
-      "trust_score": (int 0-100),
-      "visual_score": (int 0-100),
-      "logic_score": (int 0-100),
-      "is_fake": (boolean),
-      "reason": "explanation"
-    }}
+    {
+      "forensic_analysis": {
+        "true_trust_score": (int 0-100 where 100 is definitely human),
+        "details": "• Eye Symmetry: [Finding]\\n• Perimeter: [Finding]\\n• Skin: [Finding]\\n• Jitter: [Finding]"
+      },
+      "behavioral_analysis": {
+        "behavioral_trust_score": (int 0-100 where 100 is definitely human),
+        "details": "• Ocular: [Finding]\\n• Emotional: [Finding]\\n• Adaptors: [Finding]"
+      },
+      "is_fake_pixels": (boolean)
+    }
     """
     
     try:
-        # 🛠️ THE FIX: Use types.Part to create a structured list that Pydantic accepts
         response = client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model='gemini-2.5-flash',
             contents=[
-                # Text Part
                 types.Part.from_text(text=prompt_text),
-                # Image Part
                 types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg')
             ]
         )
         
-        # Robustly parse the text response
-        text_content = response.text.strip()
-        if text_content.startswith("```json"):
-            text_content = text_content[7:-3].strip()
-        elif text_content.startswith("```"):
-            text_content = text_content[3:-3].strip()
+        text_content = response.text.strip().replace("```json", "").replace("```", "")
+        gemini_result = json.loads(text_content)
             
-        return json.loads(text_content)
-
+        return {
+            "gemini_report": gemini_result,
+            "mediaPipe_raw": "FAIL" if "FACE_ADHESION_FAILURE" in transcript else "PASS"
+        }
     except Exception as e:
-        print(f"Server Error: {str(e)}")
-        # If it still fails, this will help you see the exact error in the logs
-        return {"trust_score": 0, "is_fake": True, "reason": f"Analysis Error: {str(e)}"}
+        return {"error": str(e)}
+    
+    
