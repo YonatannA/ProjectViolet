@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from google.genai import types
 import os
 
 load_dotenv()  # loads .env into environment variables
@@ -11,8 +12,9 @@ if not api_key:
 import sounddevice as sd
 import numpy as np
 import scipy.io.wavfile as wav
-import google.generativeai as genai
+import google.genai as genai
 import json
+import io
 import os
 import time
 from datetime import datetime
@@ -26,8 +28,9 @@ CHANNELS = 1
 CHUNK_DURATION = 2  # seconds (lower = more "real-time")
 OUTPUT_JSON = "live_transcription.json"
 
-genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-1.5-pro")
+client = genai.Client(api_key=api_key)
+
+MODEL_NAME = "gemini-2.5-flash-lite"
 
 # Initialize output file
 with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
@@ -36,24 +39,31 @@ with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
 print("🎙️ Live transcription started (Ctrl+C to stop)")
 
 def transcribe_chunk(audio_chunk):
-    """Send audio chunk to Gemini and return transcription"""
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp:
-        wav.write(tmp.name, SAMPLE_RATE, audio_chunk)
+    buffer = io.BytesIO()
+    wav.write(buffer, SAMPLE_RATE, audio_chunk)
+    audio_bytes = buffer.getvalue()
 
-        with open(tmp.name, "rb") as f:
-            audio_bytes = f.read()
-
-    response = model.generate_content(
-        [
-            "Transcribe this audio clearly and concisely.",
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=[
             {
-                "mime_type": "audio/wav",
-                "data": audio_bytes,
-            },
-        ]
+                "role": "user",
+                "parts": [
+                    {"text": "Transcribe this audio clearly and concisely."},
+                    {
+                        "inline_data": {
+                            "mime_type": "audio/wav",
+                            "data": audio_bytes,
+                        }
+                    },
+                ],
+            }
+        ],
     )
 
-    return response.text.strip()
+    return response.text.strip() if response.text else ""
+
+    return response.text.strip() if response.text else ""
 
 try:
     while True:
