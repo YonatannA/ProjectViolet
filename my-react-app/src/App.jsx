@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
+import TrustProgress from "./TrustProgress";
 
 export default function App() {
   const videoRef = useRef(null);
@@ -18,7 +19,6 @@ export default function App() {
       streamRef.current = stream;
       setCapturing(true);
 
-      // If user stops sharing, reset
       stream.getTracks().forEach((track) => {
         track.onended = () => stopCapture();
       });
@@ -27,8 +27,7 @@ export default function App() {
         videoRef.current.srcObject = stream;
       }
 
-      // Run one scan shortly after capture begins
-      setTimeout(runScan, 600);
+      setTimeout(runScan, 10000);
     } catch (err) {
       console.error("Error starting screen capture:", err);
     }
@@ -48,7 +47,7 @@ export default function App() {
 
     const interval = setInterval(() => {
       runScan();
-    }, 20000);
+    }, 5000); // was 20000
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,8 +106,8 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <h1>🛡️ SENTINEL AI</h1>
-        <p>Real-time call video call scam detection, right on your device.</p>
+        <h1>CallGuard</h1>
+        <p>Real-time video call scam & deepfake detection.</p>
       </header>
 
       <main className="main-content">
@@ -122,9 +121,18 @@ export default function App() {
           </button>
         )}
 
-        <div className={`video-viewport ${statusClass}`}>
-          <video ref={videoRef} autoPlay playsInline className="video-feed" />
-          <div className="hud-corners" aria-hidden="true" />
+        <div className="video-stage">
+          <div className="ring-spacer" aria-hidden="true" />
+
+          <div className={`video-viewport ${statusClass}`}>
+            <video ref={videoRef} autoPlay playsInline className="video-feed" />
+            <div className="hud-corners" aria-hidden="true" />
+          </div>
+
+          <div className={`trust-meter-panel ${statusClass}`}>
+            <TrustProgress value={trustScore} status={statusClass} size={150} />
+            <div className="trust-meter-label">TRUST</div>
+          </div>
         </div>
 
         <div className="results-hud">

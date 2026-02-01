@@ -22,6 +22,10 @@
 
   --text: #e9fff6;
   --muted: #93cbb3;
+
+  /* ring sizing (constant) */
+  --ring-size: 150px; /* must match <TrustProgress size={150} /> */
+  --ring-gap: 16px;
 }
 
 body {
@@ -92,10 +96,111 @@ body {
   transform: translateY(0px);
 }
 
-/* Video HUD */
+/* =========================
+   VIDEO + RING LAYOUT (WORKING)
+   ========================= */
+.video-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ring-gap);
+  width: 100%;
+}
+
+/* spacer keeps VIDEO centered even with a right-side ring */
+.ring-spacer {
+  width: var(--ring-size);
+  flex: 0 0 var(--ring-size);
+  height: 1px; /* invisible */
+}
+
+/* When there's not enough room, make video smaller so ring can sit beside it */
+.video-stage .video-viewport {
+  width: min(
+    720px,
+    calc(95vw - (2 * var(--ring-size) + 2 * var(--ring-gap)))
+  );
+  flex: 0 0 auto;
+}
+
+/* Trust panel fixed size, always visible */
+.trust-meter-panel {
+  width: var(--ring-size);
+  flex: 0 0 var(--ring-size);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+  background: rgba(11, 15, 13, 0.65);
+  border: 1px solid rgba(0, 255, 136, 0.18);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.42),
+    0 0 24px rgba(0, 255, 136, 0.10);
+  backdrop-filter: blur(6px);
+  padding: 12px;
+}
+
+.trust-meter-label {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  opacity: 0.75;
+}
+
+/* Nice text/trail */
+.trust-meter-panel .CircularProgressbar-text {
+  font-weight: 900;
+  font-size: 20px;
+  fill: rgba(233, 255, 246, 0.92);
+}
+.trust-meter-panel .CircularProgressbar-trail {
+  stroke: rgba(255, 255, 255, 0.10);
+}
+
+/* Glow by status */
+.trust-meter-panel.safe {
+  border-color: rgba(0, 255, 136, 0.28);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.42),
+    0 0 30px rgba(0, 255, 136, 0.12);
+}
+.trust-meter-panel.warning {
+  border-color: rgba(255, 204, 0, 0.28);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.42),
+    0 0 30px rgba(255, 204, 0, 0.10);
+}
+.trust-meter-panel.danger {
+  border-color: rgba(255, 43, 43, 0.28);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.42),
+    0 0 34px rgba(255, 43, 43, 0.12);
+}
+
+/* Responsive: stack under when screen is too tight */
+@media (max-width: 900px) {
+  .video-stage {
+    flex-direction: column;
+  }
+  .ring-spacer {
+    display: none;
+  }
+  .video-stage .video-viewport {
+    width: min(720px, 95vw);
+  }
+  .trust-meter-panel {
+    margin-top: 12px;
+  }
+}
+
+/* =========================
+   Video HUD
+   ========================= */
 .video-viewport {
   position: relative;
-  width: min(720px, 95vw);
   aspect-ratio: 16 / 9;
   border-radius: 16px;
   overflow: hidden;
@@ -138,7 +243,7 @@ body {
 }
 
 .video-viewport.danger {
-  border-width: 6px; /* thicker border */
+  border-width: 6px;
   border-style: solid;
   animation: dangerFlash 0.7s steps(2, end) infinite;
 }
@@ -147,8 +252,8 @@ body {
   0%, 100% {
     border-color: rgba(255, 43, 43, 0.35);
     box-shadow:
-      0 0 0 2px rgba(255, 43, 43, 0.10),      
-      0 0 0 10px rgba(255, 43, 43, 0.06),     
+      0 0 0 2px rgba(255, 43, 43, 0.10),
+      0 0 0 10px rgba(255, 43, 43, 0.06),
       0 18px 55px rgba(0, 0, 0, 0.55);
   }
   50% {
