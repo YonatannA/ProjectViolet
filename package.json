@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "frontend": "npm run dev --prefix my-react-app",
-    "backend": "uvicorn backend.main:app --reload --port 8000",
-    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
+    "backend": "py -m uvicorn backend.main:app --reload --port 8000",
+    "dev": "npx concurrently \"npm run frontend\" \"npm run backend\""
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
