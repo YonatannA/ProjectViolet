@@ -95,7 +95,6 @@ body {
 /* Video HUD */
 .video-viewport {
   position: relative;
-  isolation: isolate;
   width: min(720px, 95vw);
   aspect-ratio: 16 / 9;
   border-radius: 16px;
@@ -114,8 +113,6 @@ body {
 }
 
 .video-feed {
-  position: relative;
-  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -141,35 +138,46 @@ body {
 }
 
 .video-viewport.danger {
-  border-color: rgba(255, 43, 43, 0.75);
-  box-shadow:
-    0 0 0 1px rgba(255, 43, 43, 0.18),
-    0 18px 55px rgba(0, 0, 0, 0.55),
-    0 0 35px rgba(255, 43, 43, 0.16);
+  border-width: 6px; /* thicker border */
+  border-style: solid;
+  animation: dangerFlash 0.7s steps(2, end) infinite;
+}
+
+@keyframes dangerFlash {
+  0%, 100% {
+    border-color: rgba(255, 43, 43, 0.35);
+    box-shadow:
+      0 0 0 2px rgba(255, 43, 43, 0.10),      
+      0 0 0 10px rgba(255, 43, 43, 0.06),     
+      0 18px 55px rgba(0, 0, 0, 0.55);
+  }
+  50% {
+    border-color: rgba(255, 43, 43, 1);
+    box-shadow:
+      0 0 0 3px rgba(255, 43, 43, 0.35),
+      0 0 0 14px rgba(255, 43, 43, 0.16),
+      0 0 55px rgba(255, 43, 43, 0.45),
+      0 18px 55px rgba(0, 0, 0, 0.55);
+  }
 }
 
 .video-viewport.neutral {
   border-color: rgba(0, 255, 136, 0.35);
 }
+
+/* HUD corner brackets */
 .hud-corners {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 3;
-}
-.video-viewport.danger .scanlines {
-  opacity: 0.65;
-  animation-duration: 0.65s;
 }
 
-/* HUD corner brackets */
 .hud-corners::before,
 .hud-corners::after {
   content: "";
   position: absolute;
   inset: 12px;
   border-radius: 12px;
-  pointer-events: none;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -178,71 +186,6 @@ body {
   border: 1px dashed rgba(0, 255, 136, 0.18);
 }
 
-/* Scanlines overlay (subtle, always present only while loading, controlled in JSX) */
-.scanlines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  background: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.03) 0px,
-    rgba(255, 255, 255, 0.03) 2px,
-    transparent 2px,
-    transparent 7px
-  );
-  mix-blend-mode: overlay;
-  opacity: 0.55;
-  animation: scanlinesMove 2.2s linear infinite;
-}
-
-/* Scanning line */
-.video-viewport.scan-safe::before,
-.video-viewport.scan-danger::before {
-  z-index: 4;
-  content: "";
-  position: absolute;
-  left: -10%;
-  width: 120%;
-  height: 9px;
-  top: -12px;
-  pointer-events: none;
-  filter: blur(0.4px);
-  opacity: 0.95;
-  animation: scanline 1.4s linear infinite;
-  animation-duration: 0.7s;
-}
-
-.video-viewport.scan-safe::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 255, 136, 0.9),
-    rgba(0, 255, 136, 0.35),
-    transparent
-  );
-  box-shadow: 0 0 18px rgba(0, 255, 136, 0.35);
-}
-
-.video-viewport.scan-danger::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 43, 43, 0.92),
-    rgba(255, 43, 43, 0.35),
-    transparent
-  );
-  box-shadow: 0 0 18px rgba(255, 43, 43, 0.35);
-}
-
-@keyframes scanline {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(calc(100% + 30px)); }
-}
-@keyframes scanlinesMove {
-  0% { transform: translateY(-12px); }
-  100% { transform: translateY(12px); }
-}
 /* Results HUD */
 .results-hud {
   width: min(720px, 95vw);
