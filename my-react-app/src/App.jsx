@@ -27,7 +27,7 @@ export default function App() {
         videoRef.current.srcObject = stream;
       }
 
-      setTimeout(runScan, 10000);
+      setTimeout(runScan, 600);
     } catch (err) {
       console.error("Error starting screen capture:", err);
     }
