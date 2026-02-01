@@ -1,13 +1,36 @@
-# Environments
+
 venv/
+.venv/
 env/
 .env
+.env.*
 
-# Python internals
+
+!.env.example
+
+
+__pycache__/
 **/__pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Editor settings
+
+node_modules/
+**/node_modules/
+dist/
+build/
+.vite/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+
+
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db
+*.swp
